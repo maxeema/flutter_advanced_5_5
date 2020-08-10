@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
-import 'dart:async';
-import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -22,17 +20,19 @@ class _State extends State<MyApp> {
 
   String _status;
 
-
   @override
   void initState() {
+    super.initState();
     _status = 'Not Authenticated';
   }
 
   void _signInAnon() async {
-    FirebaseUser user = await _auth.signInAnonymously();
-    if(user != null && user.isAnonymous == true) {
+    final authResult = await _auth.signInAnonymously();
+    final user = authResult.user;
+    if (user != null && user.isAnonymous) {
       setState(() {
-        _status = 'Signed in Anonymously';
+        _status = 'Signed in Anonymously:\n'
+                  'User uid: ${authResult.user.uid}';
       });
     } else {
       setState(() {
@@ -42,32 +42,26 @@ class _State extends State<MyApp> {
   }
 
   void _signInGoogle() async {
-    
-    /*
-    If you are using the new version, signInWithGoogle has been depreciated
-    Try...
-    
-    final AuthCredential credential = GoogleAuthProvider.getCredential(
-    accessToken: googleAuth.accessToken,
-    idToken: googleAuth.idToken,
-    );
-
-    
-    final FirebaseUser user = (await _auth.signInWithCredential(credential)).user;
-    */
-    
     GoogleSignInAccount googleUser = await _googleSignIn.signIn();
     GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-    final FirebaseUser user = await _auth.signInWithGoogle(idToken: googleAuth.idToken, accessToken: googleAuth.accessToken);
+    final AuthCredential credential = GoogleAuthProvider.getCredential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+    final FirebaseUser user = (await _auth.signInWithCredential(credential)).user;
 
-    if(user != null && user.isAnonymous == false) {
+    if (user != null && !user.isAnonymous) {
       setState(() {
-        _status = 'Signed in with Google';
+        _status = 'Signed in with Google\n'
+            'User uid: ${user.uid}\n'
+            'User email: ${user.email}\n'
+            'User name: ${user.displayName}\n'
+            'User phoneNumber: ${user.phoneNumber}';
       });
     } else {
       setState(() {
-        _status = 'Google Signin Failed';
+        _status = 'Google Sign-in Failed';
       });
     }
   }
